@@ -218,3 +218,17 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Node / Next.js
+node_modules/
+.next/
+next-env.d.ts
+
+# Solana / Anchor
+solana/target/
+solana/.anchor/
+*.keypair.json
+id.json
+
+# Local dev databases
+*.db

@@ -1,0 +1,53 @@
+services:
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:5000}
+    ports: ["3000:3000"]
+    depends_on: [api]
+
+  api:
+    build: ./backend
+    command: gunicorn -k geventwebsocket.gunicorn.workers.GeventWebSocketWorker -w 1 -b 0.0.0.0:5000 app:app
+    ports: ["5000:5000"]
+    env_file: .env
+    depends_on: [redis, postgres]
+
+  agent-worker:
+    build: ./backend
+    command: python -m workers.agent
+    env_file: .env
+    deploy:
+      replicas: 3
+    depends_on: [redis]
+
+  sandbox-worker:
+    build: ./backend
+    command: python -m workers.sandbox
+    env_file: .env
+    depends_on: [redis, piston]
+
+  persist-worker:
+    build: ./backend
+    command: python -m workers.persist
+    env_file: .env
+    restart: on-failure
+    depends_on: [redis, postgres, api]
+
+  piston:
+    image: ghcr.io/engineer-man/piston
+    privileged: true
+    volumes: ["piston-packages:/piston/packages"]
+
+  redis:
+    image: redis:7-alpine
+
+  postgres:
+    image: timescale/timescaledb:latest-pg16
+    env_file: .env
+    volumes: ["pgdata:/var/lib/postgresql/data"]
+
+volumes:
+  piston-packages:
+  pgdata:
